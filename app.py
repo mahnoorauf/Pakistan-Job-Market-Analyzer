@@ -302,10 +302,10 @@ elif page == "🤖 Career Advisor":
     st.caption("Powered by Claude · Grounded in real Pakistan job market data")
 
     # API key — from Streamlit secrets or user input
-    api_key = st.secrets.get("ANTHROPIC_API_KEY", "") if hasattr(st, "secrets") else ""
+    api_key = st.secrets.get("GROQ_API_KEY", "") if hasattr(st, "secrets") else ""
     if not api_key:
-        api_key = st.sidebar.text_input("Anthropic API Key", type="password",
-                                        help="Get one at console.anthropic.com")
+        api_key = st.sidebar.text_input("Groq API Key", type="password",
+                                        help="Free at console.groq.com")
 
     if not api_key:
         st.info("Enter your Anthropic API key in the sidebar to start chatting.")

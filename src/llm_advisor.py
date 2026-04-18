@@ -1,5 +1,5 @@
 import pandas as pd
-import anthropic
+from groq import Groq
 
 
 def build_market_context(df: pd.DataFrame) -> str:
@@ -69,26 +69,26 @@ def build_market_context(df: pd.DataFrame) -> str:
 
 SYSTEM_PROMPT = """You are an expert Pakistan job market career advisor. You have access to real data from Rozee.pk (2024) covering {total_jobs} job listings.
 
-Use the market data below to give specific, data-driven advice. Always cite actual numbers from the data when relevant (salary figures, skill demand counts, city comparisons). Be honest if the data doesn't cover something.
+Use the market data below to give specific, data-driven advice. Always cite actual numbers from the data when relevant (salary figures, skill demand, city comparisons). Be honest if the data doesn't cover something.
 
-When advising on salaries, mention ranges (not just medians). When advising on skills, prioritize the most in-demand ones from the data. Keep responses focused and practical — the user is likely a student or early-career professional in Pakistan.
+When advising on salaries, mention ranges. When advising on skills, prioritize the most in-demand ones. Keep responses focused and practical — the user is likely a student or early-career professional in Pakistan.
 
 MARKET DATA:
 {market_context}"""
 
 
 def get_response(api_key: str, market_context: str, messages: list, total_jobs: int) -> str:
-    client = anthropic.Anthropic(api_key=api_key)
+    client = Groq(api_key=api_key)
 
     system = SYSTEM_PROMPT.format(
         market_context=market_context,
         total_jobs=f"{total_jobs:,}"
     )
 
-    response = client.messages.create(
-        model="claude-haiku-4-5-20251001",
+    response = client.chat.completions.create(
+        model="llama-3.1-8b-instant",
+        messages=[{"role": "system", "content": system}] + messages,
         max_tokens=1024,
-        system=system,
-        messages=messages,
+        temperature=0.7,
     )
-    return response.content[0].text
+    return response.choices[0].message.content

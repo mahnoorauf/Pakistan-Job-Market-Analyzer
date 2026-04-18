@@ -209,5 +209,12 @@ __marimo__/
 # Claude Code
 .claude/
 
+# Streamlit secrets (never commit API keys)
+.streamlit/secrets.toml
+
+# Project-specific
+archive/
+RozeePK-Jobs-2024.csv
+
 # Jupyter executed outputs
 notebooks/EDA_executed.ipynb

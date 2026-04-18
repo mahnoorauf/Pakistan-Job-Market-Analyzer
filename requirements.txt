@@ -3,3 +3,4 @@ numpy>=1.26
 plotly>=5.22
 scikit-learn>=1.8
 streamlit>=1.35
+anthropic>=0.40

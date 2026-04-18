@@ -5,6 +5,9 @@ import pickle
 import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+import sys, os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
+from llm_advisor import build_market_context, get_response
 
 st.set_page_config(
     page_title="Pakistan Job Market Analyzer",
@@ -22,8 +25,13 @@ def load_model():
     with open("models/salary_predictor.pkl", "rb") as f:
         return pickle.load(f)
 
+@st.cache_data
+def load_market_context():
+    return build_market_context(load_data())
+
 df = load_data()
 bundle = load_model()
+market_context = load_market_context()
 
 
 def predict_salary(experience_years, city, skills_list, career_level):
@@ -51,7 +59,7 @@ def predict_salary(experience_years, city, skills_list, career_level):
 
 # --- Sidebar ---
 st.sidebar.title("Pakistan Job Market")
-page = st.sidebar.radio("Navigate", ["📈 Market Overview", "💰 Salary Predictor"])
+page = st.sidebar.radio("Navigate", ["📈 Market Overview", "💰 Salary Predictor", "🤖 Career Advisor"])
 
 st.sidebar.markdown("---")
 st.sidebar.caption(f"Dataset: {len(df):,} jobs | Rozee.pk 2024")
@@ -286,3 +294,97 @@ elif page == "💰 Salary Predictor":
                           yaxis=dict(autorange="reversed"), height=380,
                           title="Median Salary by Career Level")
         st.plotly_chart(fig, use_container_width=True)
+
+
+# ===================== PAGE 3: CAREER ADVISOR =====================
+elif page == "🤖 Career Advisor":
+    st.title("🤖 AI Career Advisor")
+    st.caption("Powered by Claude · Grounded in real Pakistan job market data")
+
+    # API key — from Streamlit secrets or user input
+    api_key = st.secrets.get("ANTHROPIC_API_KEY", "") if hasattr(st, "secrets") else ""
+    if not api_key:
+        api_key = st.sidebar.text_input("Anthropic API Key", type="password",
+                                        help="Get one at console.anthropic.com")
+
+    if not api_key:
+        st.info("Enter your Anthropic API key in the sidebar to start chatting.")
+        st.markdown("""
+        **What this advisor can help with:**
+        - Which skills are most in-demand in Pakistan right now?
+        - What salary should I expect as a fresher in Lahore?
+        - How do I transition from sales to software?
+        - Which cities have the best job opportunities?
+        - What career level should I target with 3 years of experience?
+        """)
+        st.stop()
+
+    # Suggested questions
+    st.markdown("**Try asking:**")
+    suggestions = [
+        "What skills should I learn to get a job in tech in Pakistan?",
+        "What's a realistic salary for a fresh graduate in Karachi?",
+        "Which city has the best job market — Lahore or Islamabad?",
+        "I have 2 years of sales experience. How do I move into marketing?",
+        "What's the demand for data science jobs in Pakistan?",
+    ]
+    cols = st.columns(len(suggestions))
+    for i, (col, q) in enumerate(zip(cols, suggestions)):
+        if col.button(q, key=f"suggest_{i}", use_container_width=True):
+            st.session_state.setdefault("messages", [])
+            st.session_state["messages"].append({"role": "user", "content": q})
+            st.session_state["pending_response"] = True
+
+    st.markdown("---")
+
+    # Chat history
+    if "messages" not in st.session_state:
+        st.session_state["messages"] = []
+
+    for msg in st.session_state["messages"]:
+        with st.chat_message(msg["role"]):
+            st.markdown(msg["content"])
+
+    # Generate response if suggestion was clicked
+    if st.session_state.get("pending_response"):
+        st.session_state["pending_response"] = False
+        with st.chat_message("assistant"):
+            with st.spinner("Analyzing market data..."):
+                try:
+                    reply = get_response(
+                        api_key=api_key,
+                        market_context=market_context,
+                        messages=st.session_state["messages"],
+                        total_jobs=len(df),
+                    )
+                    st.markdown(reply)
+                    st.session_state["messages"].append({"role": "assistant", "content": reply})
+                except Exception as e:
+                    st.error(f"Error: {e}")
+        st.rerun()
+
+    # Chat input
+    if prompt := st.chat_input("Ask anything about Pakistan's job market..."):
+        st.session_state["messages"].append({"role": "user", "content": prompt})
+        with st.chat_message("user"):
+            st.markdown(prompt)
+
+        with st.chat_message("assistant"):
+            with st.spinner("Analyzing market data..."):
+                try:
+                    reply = get_response(
+                        api_key=api_key,
+                        market_context=market_context,
+                        messages=st.session_state["messages"],
+                        total_jobs=len(df),
+                    )
+                    st.markdown(reply)
+                    st.session_state["messages"].append({"role": "assistant", "content": reply})
+                except Exception as e:
+                    st.error(f"Error: {e}")
+
+    # Clear chat button
+    if st.session_state.get("messages"):
+        if st.button("Clear chat", type="secondary"):
+            st.session_state["messages"] = []
+            st.rerun()

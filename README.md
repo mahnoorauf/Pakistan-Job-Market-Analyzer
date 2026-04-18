@@ -107,4 +107,3 @@ echo 'GROQ_API_KEY = "gsk_..."' > .streamlit/secrets.toml
 ## Author
 
 **Mahnoor** — Data Science student, Pakistan  
-Built in 5 days as a portfolio project.

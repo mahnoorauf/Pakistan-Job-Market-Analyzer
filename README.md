@@ -2,7 +2,7 @@
 
 An AI-powered web app that analyzes Pakistan's job market using real Rozee.pk data. Built as a portfolio project combining data science, machine learning, and LLM integration.
 
-**[Live Demo →](https://pakistan-job-market-analyzer.streamlit.app)**
+**[Live Demo →](https://pakistan-job-market-analyzer-hawmxzdnrv2y2kk9itgmwn.streamlit.app)**
 
 ---
 
